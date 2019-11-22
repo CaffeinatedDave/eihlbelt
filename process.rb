@@ -2,13 +2,40 @@ require 'Date'
 
 prevHolder = "None"
 currentHolder = ARGV[0] || "Nottingham"
+htmlMode = ARGV.map{|f| f == "-h"}.any?
 
 data = {}
 
-def makeDefaultStats()
+def fullName(str)
+  teams = {
+    "Belfast" => "Belfast Giants",
+    "Cardiff" => "Cardiff Devils",
+    "Coventry" => "Coventry Blaze",
+    "Dundee" => "Dundee Stars",
+    "Fife" => "Fife Flyers",
+    "Glasgow" => "Glasgow Clan",
+    "Guildford" => "Guildford Flames",
+    "Manchester" => "Manchester Storm",
+    "Nottingham" => "Nottingham Panthers",
+    "Sheffield" => "Sheffield Steelers",
+    "Hull" => "Hull Stingrays",
+    "Edinburgh" => "Edinburgh Capitals",
+    "MiltonKeynes" => "Milton Keynes Lightning"
+  }
+
+  if teams[str] == nil
+    return str
+  else
+    return teams[str]
+  end
+end
+
+def makeDefaultStats(str)
   return {
+    "teamName" => fullName(str),
     "gamesSinceChallenged" => 0,
-    "failedAttempts" => 0,
+    "totalFailedAttempts" => 0,
+    "failedAttempts" => [],
     "streak" => 0,
     "titles" => []
   }
@@ -16,7 +43,7 @@ end
 
 streak = 0
 streakStart = "Season 2010-11 Champions"
-data[currentHolder] = makeDefaultStats
+data[currentHolder] = makeDefaultStats(currentHolder)
 
 File.open("gameData").each do |game|
   dateEnc, score = game.split("  ")
@@ -40,10 +67,10 @@ File.open("gameData").each do |game|
 
   # Make sure our teams exist for stats!
   if data[win] == nil
-    data[win] = makeDefaultStats
+    data[win] = makeDefaultStats(win)
   end
   if data[lose] == nil
-    data[lose] = makeDefaultStats
+    data[lose] = makeDefaultStats(lose)
   end
 
   wscore = wscore[1..-2]
@@ -67,8 +94,8 @@ File.open("gameData").each do |game|
          "start" => streakStart,
          "end" => dateStr,
          "streak" => streak,
-         "to" => win,
-         "from" => prevHolder
+         "to" => fullName(win),
+         "from" => fullName(prevHolder)
        }
        data[lose]["titles"] << oldReign
 
@@ -76,10 +103,12 @@ File.open("gameData").each do |game|
        streakStart = dateStr
        prevHolder = currentHolder
        currentHolder = win
+       data[win]["failedAttempts"] = []
        streak = 1
      else
        streak += 1
-       data[lose]["failedAttempts"] += 1
+       data[lose]["totalFailedAttempts"] += 1
+       data[lose]["failedAttempts"] << game
 #       if ot == nil
 #         puts "#{date}: #{currentHolder} is still the champion, defeating #{lose} #{wscore} to #{lscore}. Streak of #{streak}"
 #       else
@@ -100,31 +129,52 @@ currentReign = {
   "end" => "current",
   "streak" => streak,
   "to" => nil,
-  "from" => prevHolder
+  "from" => fullName(prevHolder)
 }
 data[currentHolder]["titles"] << currentReign
 
 data.sort.each do |k, v|
-  puts k
+  if htmlMode 
+    puts "<h4>#{v['teamName']}</h4>"
+    puts "<p>#{v['titles'].length} Time Champions</p>"
+    puts "<table>"
+    puts "  <tr><th>Start Date</th><th>Previous Holders</th><th>End Date</th><th>Duration</th></tr>"
+  else
+    puts k
+    puts "#{v['titles'].length} Time Champions"
+  end
   teamGames = 0
   v["titles"].each do |t|
     tFormated = "#{t['start']} (from #{t['from']}) - #{t['end']}: #{t['streak']} games"
+    hFormated = "  <tr><td>#{t['start']}</td><td>#{t['from']}</td><td>#{t['end']}</td><td>#{t['streak']} games</td></tr>"
     if t['to'] != nil
       tFormated += " (to #{t['to']})"
     end
-    puts " - #{tFormated}"
+    if htmlMode 
+      puts "#{hFormated}"
+    else
+      puts " - #{tFormated}"
+    end
     teamGames += t['streak']
   end
-  puts "#{v['titles'].length} Time Champion"
-  puts "#{teamGames} Total Games As Champion"
-  puts "Average reign: #{teamGames / v['titles'].length} Games"
-  puts "#{v['gamesSinceChallenged']} Games since challenged for title"
-
-  titleGames = v['failedAttempts'] + teamGames
-  challengePercent = (v['titles'].length * 100.0) / (v['titles'].length + v['failedAttempts'] + 0.0)
+  titleGames = v['totalFailedAttempts'] + teamGames
+  challengePercent = (v['titles'].length * 100.0) / (v['titles'].length + v['totalFailedAttempts'] + 0.0)
   titlePercent = (teamGames * 100.0) / (titleGames + 0.0)
 
-  puts "#{v['titles'].length} : #{v['titles'].length + v['failedAttempts']} Win rating when challenging (#{challengePercent}%)"
-  puts "#{teamGames} : #{titleGames} Win rating in title games (#{titlePercent}%)"
-  puts "-----"
+  if htmlMode 
+    puts "</table>"
+  else
+
+    puts "#{teamGames} Total Games As Champion"
+    puts "Average reign: #{teamGames / v['titles'].length} Games"
+    puts "#{v['gamesSinceChallenged']} Games since challenged for title"
+    puts "#{v['failedAttempts'].length} failed title challenges since last reign:"
+    v['failedAttempts'].each do |g|
+      puts g.to_s
+    end
+
+    puts "#{v['titles'].length} : #{v['titles'].length + v['totalFailedAttempts']} Win rating when challenging (#{challengePercent}%)"
+    puts "#{teamGames} : #{titleGames} Win rating in title games (#{titlePercent}%)"
+    puts "-----"
+  end
 end
