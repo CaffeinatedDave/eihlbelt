@@ -42,8 +42,8 @@ Dir["./results/*"].sort.each do |file|
 
       event = "#{season}: #{date}  "
 
-      home = fullName(home)
-      away = fullName(away)
+      home = home.split(" ").join
+      away = away.split(" ").join
 
       event += if hscore > ascore 
         "#{home} (#{hscore}) def #{away} (#{ascore})"

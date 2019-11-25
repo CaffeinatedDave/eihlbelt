@@ -99,7 +99,7 @@ File.open("gameData").each do |game|
        }
        data[lose]["titles"] << oldReign
 
-#       puts "#{date}: #{win} is the new champion, defeating #{lose} #{wscore} to #{lscore} after #{streak} games"
+       puts "#{date}: #{win} is the new champion, defeating #{lose} #{wscore} to #{lscore} after #{streak} games"
        streakStart = dateStr
        prevHolder = currentHolder
        currentHolder = win
@@ -109,11 +109,11 @@ File.open("gameData").each do |game|
        streak += 1
        data[lose]["totalFailedAttempts"] += 1
        data[lose]["failedAttempts"] << game
-#       if ot == nil
-#         puts "#{date}: #{currentHolder} is still the champion, defeating #{lose} #{wscore} to #{lscore}. Streak of #{streak}"
-#       else
-#         puts "#{date}: #{currentHolder} is still the champion, despite losing #{wscore} - #{lscore} to #{win} AOT. Streak of #{streak}"
-#       end
+       if ot == nil
+         puts "#{date}: #{currentHolder} is still the champion, defeating #{lose} #{wscore} to #{lscore}. Streak of #{streak}"
+       else
+         puts "#{date}: #{currentHolder} is still the champion, despite losing #{wscore} - #{lscore} to #{win} AOT. Streak of #{streak}"
+       end
      end
   else
     data[win]["gamesSinceChallenged"] += 1
