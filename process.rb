@@ -6,27 +6,34 @@ htmlMode = ARGV.map{|f| f == '-h'}.any?
 
 data = {}
 
+@teams = {
+  'Belfast' => {'name' => 'Belfast Giants', 'active' => true},
+  'Cardiff' => {'name' => 'Cardiff Devils', 'active' => true},
+  'Coventry' => {'name' => 'Coventry Blaze', 'active' => true},
+  'Dundee' => {'name' => 'Dundee Stars', 'active' => true},
+  'Fife' => {'name' => 'Fife Flyers', 'active' => true},
+  'Glasgow' => {'name' => 'Glasgow Clan', 'active' => true},
+  'Guildford' => {'name' => 'Guildford Flames', 'active' => true},
+  'Manchester' => {'name' => 'Manchester Storm', 'active' => true},
+  'Nottingham' => {'name' => 'Nottingham Panthers', 'active' => true},
+  'Sheffield' => {'name' => 'Sheffield Steelers', 'active' => true},
+  'Hull' => {'name' => 'Hull Stingrays', 'active' => false},
+  'Edinburgh' => {'name' => 'Edinburgh Capitals', 'active' => false},
+  'MiltonKeynes' => {'name' => 'Milton Keynes Lightning', 'active' => false}
+}
 def fullName(str)
-  teams = {
-    'Belfast' => 'Belfast Giants',
-    'Cardiff' => 'Cardiff Devils',
-    'Coventry' => 'Coventry Blaze',
-    'Dundee' => 'Dundee Stars',
-    'Fife' => 'Fife Flyers',
-    'Glasgow' => 'Glasgow Clan',
-    'Guildford' => 'Guildford Flames',
-    'Manchester' => 'Manchester Storm',
-    'Nottingham' => 'Nottingham Panthers',
-    'Sheffield' => 'Sheffield Steelers',
-    'Hull' => 'Hull Stingrays',
-    'Edinburgh' => 'Edinburgh Capitals',
-    'MiltonKeynes' => 'Milton Keynes Lightning'
-  }
-
-  if teams[str] == nil
+  if @teams[str] == nil
     return str
   else
-    return teams[str]
+    return @teams[str]['name']
+  end
+end
+
+def isActive(str)
+  if @teams[str] == nil
+    return false
+  else
+    return @teams[str]['active']
   end
 end
 
@@ -135,11 +142,22 @@ currentReign = {
 }
 data[currentHolder]['titles'] << currentReign
 
+if htmlMode
+  puts '<h1> EIHL Belt </h1>'
+  puts "<h2> Current Holders - #{fullName(currentHolder)} </h2>"
+  puts "<p> Since #{streakStart} (#{streak} game(s)) </p>"
+  puts '<p><strong>Next Title Defence:</strong> 31st December @ Nottingham Panthers</p>'
+  puts '<hr/>'
+  puts '<h3>Team by Team Breakdown</h3>'
+  puts '<table class="table">'
+end
+
 data.sort.each do |k, v|
-  if htmlMode 
-    puts "<h4>#{v['teamName']}</h4>"
-    puts "<p>#{v['titles'].length} Time Champions</p>"
-    puts '<table class="table">'
+  if !isActive(k)
+    next
+  end
+  if htmlMode
+    puts "<tr><th colspan=\"4\"><h4>#{v['teamName']} - #{v['titles'].length} Time Champions</h4></th></tr>"
     puts '  <tr><th>Start Date</th><th>Previous Holders</th><th>End Date</th><th>Duration</th></tr>'
   else
     puts k
@@ -152,7 +170,7 @@ data.sort.each do |k, v|
     if t['to'] != nil
       tFormated += " (to #{t['to']})"
     end
-    if htmlMode 
+    if htmlMode
       puts hFormated
     else
       puts " - #{tFormated}"
@@ -163,10 +181,7 @@ data.sort.each do |k, v|
   challengePercent = (v['titles'].length * 100.0) / (v['titles'].length + v['totalFailedAttempts'] + 0.0)
   titlePercent = (teamGames * 100.0) / (titleGames + 0.0)
 
-  if htmlMode 
-    puts '</table>'
-  else
-
+  if !htmlMode
     puts "#{teamGames} Total Games As Champion"
     puts "Average reign: #{teamGames / v['titles'].length} Games"
     puts "#{v['gamesSinceChallenged']} Games since challenged for title"
@@ -179,4 +194,8 @@ data.sort.each do |k, v|
     puts "#{teamGames} : #{titleGames} Win rating in title games (#{titlePercent}%)"
     puts '-----'
   end
+end
+
+if htmlMode
+  puts '</table>'
 end
